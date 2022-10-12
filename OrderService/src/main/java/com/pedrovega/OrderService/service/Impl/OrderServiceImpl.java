@@ -1,7 +1,9 @@
 package com.pedrovega.OrderService.service.Impl;
 
 import com.pedrovega.OrderService.entity.Order;
+import com.pedrovega.OrderService.external.client.PaymentService;
 import com.pedrovega.OrderService.external.client.ProductService;
+import com.pedrovega.OrderService.external.request.PaymentRequest;
 import com.pedrovega.OrderService.model.OrderRequest;
 import com.pedrovega.OrderService.repository.OrderRepository;
 import com.pedrovega.OrderService.service.OrderService;
@@ -22,11 +24,13 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private ProductService productService;
 
+    @Autowired
+    private PaymentService paymentService;
 
     @Override
     public long placeOrder(OrderRequest orderRequest) {
 
-        // Order Entity -> Save the data with Status Order Crated
+        // Order Entity -> Save the data with Status Order Created
         // Product Service - Block Products (Reduce the Quantity)
         // Payment Service -> Payments -> Success -> COMPLETE, Else
         // CANCELLED
@@ -45,6 +49,28 @@ public class OrderServiceImpl implements OrderService {
                 .build();
         order = orderRepository.save(order);
 
+        log.info("Calling Payment Service to complete the payment");
+        PaymentRequest paymentRequest
+                = PaymentRequest
+                .builder()
+                .orderId(order.getId()) // Order id from paymentService recive a order id from order Service
+                .paymentMode(orderRequest.getPaymentMode())
+                .amount(orderRequest.getTotalAmount())
+                .build();
+
+        String orderStatus = null;
+
+        try {
+            paymentService.doPayment(paymentRequest);
+            log.info("Payment done Successfuully. Changing the Order Status to PLACED");
+            orderStatus = "PLACED";
+        } catch (Exception e) {
+            log.error("Error occured in payment. Changing order status to PAYMENT_FAILED");
+            orderStatus = "PAYMENT_FAILED";
+        }
+
+        order.setOrderStatus(orderStatus);
+        orderRepository.save(order);
         log.info("Order Places Successfully with Order Id: {}", order.getId());
         return order.getId();
     }
