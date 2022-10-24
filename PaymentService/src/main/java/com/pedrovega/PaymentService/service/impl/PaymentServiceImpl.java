@@ -1,7 +1,9 @@
 package com.pedrovega.PaymentService.service.impl;
 
 import com.pedrovega.PaymentService.entity.TransactionDetails;
+import com.pedrovega.PaymentService.model.PaymentMode;
 import com.pedrovega.PaymentService.model.PaymentRequest;
+import com.pedrovega.PaymentService.model.PaymentResponse;
 import com.pedrovega.PaymentService.repository.TransactionDetailsRepository;
 import com.pedrovega.PaymentService.service.PaymentService;
 import lombok.extern.log4j.Log4j2;
@@ -35,5 +37,24 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("Transaction Completed with Id: {}",transactionDetails.getId());
 
         return transactionDetails.getId();
+    }
+
+    @Override
+    public PaymentResponse doPaymentDetailsByOrderId(String orderId) {
+        log.info("Getting payment details for Order Id: {}", orderId);
+
+        TransactionDetails transactionDetails =
+                transactionDetailsRepository.findByOrderId(Long.parseLong(orderId));
+
+        PaymentResponse paymentResponse
+                = PaymentResponse.builder()
+                .paymentId(transactionDetails.getId())
+                .paymentMode(PaymentMode.valueOf(transactionDetails.getPaymentMode()))
+                .paymentDate(transactionDetails.getPaymentDate())
+                .orderId(transactionDetails.getOrderId())
+                .status(transactionDetails.getPaymentStatus())
+                .amount(transactionDetails.getAmount())
+                .build();
+        return paymentResponse;
     }
 }
