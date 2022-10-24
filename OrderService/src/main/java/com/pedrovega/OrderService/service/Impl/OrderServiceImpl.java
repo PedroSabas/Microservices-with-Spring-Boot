@@ -93,12 +93,13 @@ public class OrderServiceImpl  implements OrderService{
                         new CustomException("Order not found for the order Id:" + orderId,
                                             "NOT_FOUND", 404));
 
-        log.info("Invoking Product service to fetch the product id: {}", order.getId());
 
+        log.info("Invoking Product service to fetch the product id: {}", order.getId());
         ProductResponse productResponse
                 = restTemplate.getForObject(
                         "http://PRODUCT-SERVICE/product/" + order.getProductId(),
                 ProductResponse.class);
+
 
         log.info("Getting payment information form the payment service");
         PaymentResponse paymentResponse
